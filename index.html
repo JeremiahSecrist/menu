@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product Display</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      async function fetchProducts() {
+        try {
+          console.log("Fetching products...");
+          const response = await fetch("https://menu.arouzing.workers.dev/");
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log("API Response:", data);
+          displayProducts(data);
+        } catch (error) {
+          console.error("Error fetching products:", error);
+        }
+      }
+
+      function displayProducts(products) {
+        const leftContainer = document.getElementById("left-container");
+        const rightContainer = document.getElementById("right-container");
+        leftContainer.innerHTML = "";
+        rightContainer.innerHTML = "";
+
+        if (!Array.isArray(products) || products.length === 0) {
+          leftContainer.innerHTML =
+            '<p class="text-center text-gray-600">No products available.</p>';
+          rightContainer.innerHTML =
+            '<p class="text-center text-gray-600">No products available.</p>';
+          return;
+        }
+
+        // Limit to 16 products for each section (4x4 grid)
+        const leftProducts = products.slice(0, 16);
+        const rightProducts = products.slice(16, 32);
+
+        function createProductCard(product) {
+          const card = document.createElement("div");
+          card.className = "bg-neutral-800 rounded overflow-hidden shadow-lg relative h-full";
+
+          // Image as background
+          const img = document.createElement("img");
+          img.src =
+            product.photos && product.photos.length > 0
+              ? product.photos[0].photoUrl
+              : "https://via.placeholder.com/500";
+          img.alt = product.productName;
+          img.className = "w-full h-full object-cover absolute inset-0";
+
+          // Semi-transparent overlay to improve text readability
+          const overlay = document.createElement("div");
+          overlay.className = "absolute inset-0 bg-black opacity-40";
+
+          // Product info positioned at the bottom of the card
+          const infoContainer = document.createElement("div");
+          infoContainer.className =
+            "absolute bottom-0 left-0 right-0 px-3 py-2 z-10";
+
+          const title = document.createElement("h3");
+          title.className =
+            "bg-black/20 w-fit font-bold text-sm mb-1 truncate text-white";
+          title.textContent = product.productName;
+
+          const price = document.createElement("p");
+          price.className = "text-green-300 text-sm font-bold";
+          price.textContent = `$${product.price.toFixed(2)}`;
+
+          infoContainer.appendChild(title);
+          infoContainer.appendChild(price);
+
+          // Add all elements to card
+          card.appendChild(img);
+          card.appendChild(overlay);
+          card.appendChild(infoContainer);
+
+          return card;
+        }
+
+        leftProducts.forEach(product =>
+          leftContainer.appendChild(createProductCard(product))
+        );
+        rightProducts.forEach(product =>
+          rightContainer.appendChild(createProductCard(product))
+        );
+      }
+
+      function handleHashChange() {
+        const hash = window.location.hash.toLowerCase();
+
+        // Hide the button container if a valid hash is present
+        if (hash === "#left" || hash === "#right") {
+          document.getElementById("button-container").classList.add("hidden");
+        } else {
+          document
+            .getElementById("button-container")
+            .classList.remove("hidden");
+        }
+
+        // Show/hide sections based on hash
+        if (hash === "#left") {
+          document.getElementById("left-section").classList.remove("hidden");
+          document.getElementById("right-section").classList.add("hidden");
+        } else if (hash === "#right") {
+          document.getElementById("right-section").classList.remove("hidden");
+          document.getElementById("left-section").classList.add("hidden");
+        } else {
+          // If no valid hash, hide both sections
+          document.getElementById("left-section").classList.add("hidden");
+          document.getElementById("right-section").classList.add("hidden");
+        }
+      }
+
+      window.onload = function() {
+        fetchProducts();
+        // Handle hash on initial page load
+        handleHashChange();
+      };
+
+      // Listen for hash changes
+      window.addEventListener("hashchange", handleHashChange);
+    </script>
+  </head>
+  <body class="w-screen h-screen bg-neutral-900 overflow-hidden">
+    <div
+      id="button-container"
+      class="absolute inset-0 flex justify-center items-center gap-4 bg-gray-200"
+    >
+      <a href="#left" class="px-4 py-2 bg-blue-500 text-white rounded"
+        >Show Left</a
+      >
+      <a href="#right" class="px-4 py-2 bg-blue-500 text-white rounded"
+        >Show Right</a
+      >
+    </div>
+
+    <div class="w-full h-full p-4">
+      <div id="left-section" class="hidden h-full">
+        <div
+          id="left-container"
+          class="grid grid-cols-4 grid-rows-4 gap-2 h-full"
+        ></div>
+      </div>
+
+      <div id="right-section" class="hidden h-full">
+        <div
+          id="right-container"
+          class="grid grid-cols-4 grid-rows-4 gap-2 h-full"
+        ></div>
+      </div>
+    </div>
+  </body>
+</html>
